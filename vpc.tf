@@ -1,0 +1,70 @@
+resource "google_compute_address" "care_pip" {
+  name   = "care-pip"
+  region = var.region
+}
+
+# It is a vpc with two subnets one for the gke cluster and other is for the database.
+module "vpc" {
+  source  = "terraform-google-modules/network/google"
+  version = "~> 11.0"
+
+  project_id   = var.project_id
+  network_name = "ohn-${var.environment}"
+
+  subnets = [
+    {
+      subnet_name        = "gke"
+      subnet_ip          = var.gke_subnets
+      subnet_region      = var.region
+    }
+  ]
+
+  secondary_ranges = {
+    gke = [
+      {
+        range_name    = "gke-pods-range"
+        ip_cidr_range = var.gke_pods_range
+      },
+      {
+        range_name    = "gke-services-range"
+        ip_cidr_range = var.gke_services_range
+      }
+    ]
+  }
+  routes = []
+}
+
+# GKE Pod and Service IP ranges for VPC-native cluster
+resource "google_compute_global_address" "pods_range" {
+  name          = "gke-pods-range"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = module.vpc.network_self_link
+}
+
+resource "google_compute_global_address" "services_range" {
+  name          = "gke-services-range"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 20
+  network       = module.vpc.network_self_link
+}
+
+# static ip
+output "care_pip_name" {
+  value = google_compute_address.care_pip.name
+  sensitive = false
+}
+
+output "care_pip_address" {
+  value = google_compute_address.care_pip.address
+  sensitive = false
+}
+
+#### 4. Outputs for Downstream Modules
+output "vpc_id" {
+  description = "The ID of the VPC"
+  value       = module.vpc.network_id
+}
+
