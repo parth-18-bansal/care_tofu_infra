@@ -13,6 +13,11 @@ module "vpc" {
 
   subnets = [
     {
+      subnet_name        = "database"
+      subnet_ip          = local.database_subnets
+      subnet_region      = var.region
+    },
+    {
       subnet_name        = "gke"
       subnet_ip          = var.gke_subnets
       subnet_region      = var.region
@@ -66,5 +71,10 @@ output "care_pip_address" {
 output "vpc_id" {
   description = "The ID of the VPC"
   value       = module.vpc.network_id
+}
+
+output "database_subnets" {
+  description = "List of database subnet self-links"
+  value       = module.vpc.subnets_self_links
 }
 

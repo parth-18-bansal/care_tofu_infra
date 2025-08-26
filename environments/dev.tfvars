@@ -20,3 +20,6 @@ node_pools = [
     disk_size_gb = 100
   },
 ]
+
+# Database
+alloydb_cpu_count=2
